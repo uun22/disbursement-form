@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>ใบขอเบิกเงิน</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1d;--mut:#8a8a8a;--pill:#e8e8e8;--acc:#7fc4ad;--acc2:#2f8f74;--err:#c0392b;--card:#f6f6f6}
+@media(prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mut:#9a9a9a;--pill:#2b2b2b;--acc:#3d8f77;--acc2:#7fd4b8;--err:#ff7b6b;--card:#202020}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 "Sarabun","Noto Sans Thai",system-ui,sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:16px 16px 120px}
+h1{font-size:20px;margin:8px 0 2px}.sub{color:var(--mut);font-size:13px;margin-bottom:12px}
+label{display:block;font-weight:700;margin:14px 0 6px}label small{font-weight:400;color:var(--mut)}
+input,select,textarea{width:100%;border:0;background:var(--pill);color:var(--fg);border-radius:24px;padding:13px 16px;font:inherit;outline:none}
+input[readonly]{opacity:.75}textarea{border-radius:16px;min-height:60px}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.radio{display:flex;gap:18px;align-items:center;margin:4px 0}.radio label{display:flex;gap:8px;align-items:center;font-weight:400;margin:0}
+.radio input{width:20px;height:20px;accent-color:var(--acc2);padding:0}
+.card{background:var(--card);border-radius:18px;padding:4px 14px 14px;margin:14px 0}
+.card h3{margin:12px 0 0;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.calc{background:var(--bg);border-radius:12px;padding:10px 12px;margin-top:12px;font-size:14px}
+.calc div{display:flex;justify-content:space-between}.calc .net{font-weight:700;border-top:1px dashed var(--mut);margin-top:4px;padding-top:4px}
+.btn{border:0;border-radius:24px;padding:14px;font:inherit;font-weight:700;width:100%;background:var(--acc);color:#0b2a21;cursor:pointer}
+.btn.ghost{background:var(--pill);color:var(--fg)}.btn.del{width:auto;padding:4px 12px;background:none;color:var(--err);font-weight:400}
+.list{position:relative}.opts{position:absolute;z-index:5;left:0;right:0;background:var(--bg);border:1px solid var(--pill);border-radius:14px;max-height:240px;overflow:auto;box-shadow:0 6px 20px #0003}
+.opts div{padding:10px 14px;border-bottom:1px solid var(--pill);font-size:14px}.opts div:hover{background:var(--pill)}.opts small{color:var(--mut);display:block}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--pill);padding:10px 16px}
+.bar .in{max-width:520px;margin:0 auto}.tot{display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px}
+.err{color:var(--err);font-size:13px;margin-top:4px}.banner{background:#fff3cd;color:#664d03;border-radius:12px;padding:8px 12px;font-size:13px;margin-bottom:10px}
+.hidden{display:none}pre{white-space:pre-wrap;background:var(--card);padding:12px;border-radius:12px;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 4px;border-bottom:1px solid var(--pill);text-align:right}td:first-child,th:first-child{text-align:left}
+</style></head><body><div class="wrap">
+<div id="s1">
+<h1>ใบขอเบิกเงิน (แอดวานซ์)</h1><div class="sub">เลือก Job แล้วระบบดึงข้อมูลลูกค้าให้อัตโนมัติ</div>
+<div id="mode" class="banner"></div>
+<label>Job No (เลข Quotation) *</label>
+<div class="list"><input id="jobq" placeholder="พิมพ์ค้นหา เช่น DKT_2606 / ชื่อลูกค้า" autocomplete="off"><div id="jobopts" class="opts hidden"></div></div>
+<div id="joberr" class="err"></div>
+<label>ลูกค้า</label><input id="f_cust" readonly>
+<label>ชื่องาน (Job detail)</label><input id="f_det" readonly>
+<div class="row"><div><label>เริ่ม</label><input id="f_ps" readonly></div><div><label>สิ้นสุด</label><input id="f_pe" readonly></div></div>
+<div class="row"><div><label>ผู้ขอ</label><input id="f_req" readonly></div><div><label>วันที่</label><input id="f_date" readonly></div></div>
+<h1 style="margin-top:22px">รายการเบิก</h1><div class="sub">1 บรรทัด = ผู้รับเงิน 1 ราย</div>
+<div id="lines"></div>
+<button class="btn ghost" id="add">+ เพิ่มรายการ</button>
+</div>
+<div id="s2" class="hidden"><h1>ตรวจสอบก่อนส่ง</h1><div id="sum"></div><div id="res"></div></div>
+</div>
+<div class="bar"><div class="in"><div class="tot"><span>ยอดสุทธิรวม</span><span id="gt">0.00</span></div>
+<div class="row"><button class="btn ghost hidden" id="back">แก้ไข</button><button class="btn" id="next">ตรวจสอบ</button></div></div></div>
+<script>
+var CONFIG={API_URL:'https://script.google.com/macros/s/AKfycbzpe4WRAnRwbH6z007r0IZN8j3nXgE85afhBiuDfbcr_ml_DjFOVwujVOMHp1HOfrNu/exec',LIFF_ID:'2012297955-xttcMKSR',TEST_USER:'ผู้ขอ ทดสอบ 1'}; // API_URL ว่าง = โหมดทดสอบ (ใช้ข้อมูลในไฟล์ ไม่ส่งไปไหน) / ใส่ URL web app ของ Apps Script เพื่อต่อระบบจริง / LIFF_ID ใส่เมื่อเปิดผ่าน LINE
+var M={jobs:[],payees:[],whtRates:[]};
+function round2(x){return Math.round((x+Number.EPSILON)*100)/100;}
+// mode: 'ex' = amount is before VAT, 'inc' = amount includes VAT
+function calcLine(amount,mode,hasVat,whtRate){
+  var a=round2(Number(amount)||0),base,vat;
+  if(!hasVat){base=a;vat=0;}
+  else if(mode==='inc'){base=round2(a/1.07);vat=round2(a-base);}
+  else{base=a;vat=round2(a*0.07);}
+  var wht=round2(base*(Number(whtRate)||0));
+  return {base:base,vat:vat,wht:wht,net:round2(base+vat-wht)};
+}
+
+var $=function(i){return document.getElementById(i)},fmt=function(x){return Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})};
+var job=null,lines=[],seq=0;
+$('mode').textContent=CONFIG.API_URL?'เชื่อมต่อระบบจริง':'โหมดทดสอบ: ข้อมูลจริงจากชีทเซล (snapshot) · ผู้รับเงินเป็นข้อมูลสมมติ · ไม่ส่งข้อมูลไปที่ไหน';
+$('f_req').value=CONFIG.TEST_USER;$('f_date').value=new Date().toISOString().slice(0,10);
+function opts(box,items,pick){box.innerHTML='';items.slice(0,40).forEach(function(it){var d=document.createElement('div');d.innerHTML=it.html;d.onmousedown=d.ontouchstart=function(e){e.preventDefault();pick(it.v);box.classList.add('hidden')};box.appendChild(d)});box.classList.toggle('hidden',!items.length)}
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+$('jobq').oninput=function(){var q=this.value.toLowerCase().trim();if(!q){$('jobopts').classList.add('hidden');return}
+ var r=M.jobs.filter(function(j){return (j.job_no+' '+j.customer+' '+j.job_detail).toLowerCase().indexOf(q)>-1});
+ opts($('jobopts'),r.map(function(j){return{v:j,html:'<b>'+esc(j.job_no)+'</b><small>'+esc(j.customer)+' · '+esc(j.job_detail).slice(0,60)+'</small>'}}),setJob)};
+$('jobq').onblur=function(){setTimeout(function(){$('jobopts').classList.add('hidden')},150)};
+function setJob(j){job=j;$('jobq').value=j.job_no;$('f_cust').value=j.customer;$('f_det').value=j.job_detail;$('f_ps').value=j.period_start;$('f_pe').value=j.period_end;$('joberr').textContent=''}
+function addLine(){var id=++seq;lines.push({id:id,date:'',desc:'',mode:'ex',amount:'',vat:'N',wht:'3',payee:null,pay:''});render()}
+function render(){var box=$('lines');box.innerHTML='';lines.forEach(function(L,i){
+ var c=document.createElement('div');c.className='card';c.innerHTML=
+ '<h3>รายการที่ '+(i+1)+(lines.length>1?'<button class="btn del" data-d="'+L.id+'">ลบ</button>':'')+'</h3>'+
+ '<label>วันที่ใช้จ่าย *</label><input type="date" data-k="date" value="'+L.date+'">'+
+ '<label>รายละเอียด *</label><input data-k="desc" placeholder="เช่น ค่า Truss, ค่า Walkie Talkie" value="'+esc(L.desc)+'">'+
+ '<label>มี VAT 7% หรือไม่ *</label><div class="radio"><label><input type="radio" name="v'+L.id+'" data-k="vat" value="Y" '+(L.vat=='Y'?'checked':'')+'> มี</label><label><input type="radio" name="v'+L.id+'" data-k="vat" value="N" '+(L.vat=='N'?'checked':'')+'> ไม่มี</label></div>'+
+ '<label>จำนวนเงินที่กรอกเป็น</label><div class="radio"><label><input type="radio" name="m'+L.id+'" data-k="mode" value="ex" '+(L.mode=='ex'?'checked':'')+'> ก่อน VAT</label><label><input type="radio" name="m'+L.id+'" data-k="mode" value="inc" '+(L.mode=='inc'?'checked':'')+'> รวม VAT แล้ว</label></div>'+
+ '<label>จำนวนเงิน (บาท) *</label><input type="number" inputmode="decimal" step="0.01" data-k="amount" value="'+L.amount+'">'+
+ '<label>หัก ณ ที่จ่าย</label><select data-k="wht">'+M.whtRates.map(function(r){return'<option value="'+r.code+'" '+(L.wht==r.code?'selected':'')+'>'+r.note+'</option>'}).join('')+'</select>'+
+ '<label>ผู้รับเงิน *</label><div class="list"><input data-k="payq" placeholder="พิมพ์ค้นหาชื่อผู้รับเงิน" value="'+(L.payee?esc(L.payee.name):'')+'" autocomplete="off"><div class="opts hidden"></div></div>'+
+ '<label>วันที่ต้องการรับเงิน *</label><input type="date" data-k="pay" value="'+L.pay+'">'+
+ '<div class="calc" id="c'+L.id+'"></div><div class="err" id="e'+L.id+'"></div>';
+ box.appendChild(c);
+ c.querySelectorAll('[data-k]').forEach(function(el){var k=el.dataset.k;
+  if(k=='payq'){el.oninput=function(){var q=el.value.toLowerCase();L.payee=null;var r=M.payees.filter(function(p){return p.name.toLowerCase().indexOf(q)>-1});
+    opts(el.nextSibling,r.map(function(p){return{v:p,html:esc(p.name)+'<small>'+esc(p.bank)+' · xxx'+p.last4+' · '+p.type+'</small>'}}),function(p){L.payee=p;el.value=p.name;calc()})};
+    el.onfocus=el.oninput;el.onblur=function(){setTimeout(function(){el.nextSibling.classList.add('hidden')},150)};return}
+  el.oninput=el.onchange=function(){L[k]=el.value;if(k=='vat'||k=='mode'||k=='amount'||k=='wht')calc()}});
+ var d=c.querySelector('[data-d]');if(d)d.onclick=function(){lines=lines.filter(function(x){return x.id!=L.id});render()};
+});calc()}
+function lc(L){return calcLine(L.amount,L.mode,L.vat=='Y',(M.whtRates.filter(function(r){return r.code==L.wht})[0]||{rate:0}).rate)}
+function calc(){var g=0;lines.forEach(function(L){var r=lc(L);g+=r.net;var e=$('c'+L.id);if(e)e.innerHTML='<div><span>ยอดก่อน VAT</span><span>'+fmt(r.base)+'</span></div><div><span>VAT 7%</span><span>'+fmt(r.vat)+'</span></div><div><span>หัก ณ ที่จ่าย</span><span>−'+fmt(r.wht)+'</span></div><div class="net"><span>สุทธิที่โอน</span><span>'+fmt(r.net)+'</span></div>'});$('gt').textContent=fmt(g)}
+function validate(){var ok=true;if(!job){$('joberr').textContent='กรุณาเลือก Job No จากรายการ';ok=false}
+ lines.forEach(function(L){var m=[];if(!L.date)m.push('วันที่ใช้จ่าย');if(!L.desc.trim())m.push('รายละเอียด');if(!(Number(L.amount)>0))m.push('จำนวนเงิน');if(!L.payee)m.push('ผู้รับเงิน (เลือกจากรายการ)');if(!L.pay)m.push('วันที่รับเงิน');
+  $('e'+L.id).textContent=m.length?'ต้องกรอก: '+m.join(', '):'';if(m.length)ok=false});return ok}
+var CLIENT_ID=Date.now()+'-'+Math.random().toString(36).slice(2,10);
+function payload(){return{action:'submit',client_id:CLIENT_ID,job_no:job.job_no,lines:lines.map(function(L){return{expense_date:L.date,description:L.desc.trim(),input_mode:L.mode,amount:Number(L.amount),has_vat:L.vat=='Y',wht_code:L.wht,payee_id:L.payee.id,pay_date:L.pay}})}}
+$('add').onclick=addLine;
+$('next').onclick=function(){if($('s2').classList.contains('hidden')){if(!validate()){window.scrollTo(0,0);return}
+  var t=lines.reduce(function(a,L){var r=lc(L);return{b:a.b+r.base,v:a.v+r.vat,w:a.w+r.wht,n:a.n+r.net}},{b:0,v:0,w:0,n:0});
+  $('sum').innerHTML='<p><b>'+esc(job.job_no)+'</b><br>'+esc(job.customer)+'<br>'+esc(job.job_detail)+'</p><table><tr><th>ผู้รับเงิน</th><th>ก่อน VAT</th><th>VAT</th><th>หัก</th><th>สุทธิ</th></tr>'+lines.map(function(L){var r=lc(L);return'<tr><td>'+esc(L.payee.name)+'<br><small>รับเงิน '+L.pay+'</small></td><td>'+fmt(r.base)+'</td><td>'+fmt(r.vat)+'</td><td>'+fmt(r.wht)+'</td><td>'+fmt(r.net)+'</td></tr>'}).join('')+'<tr><td><b>รวม</b></td><td>'+fmt(t.b)+'</td><td>'+fmt(t.v)+'</td><td>'+fmt(t.w)+'</td><td><b>'+fmt(t.n)+'</b></td></tr></table>';
+  $('s1').classList.add('hidden');$('s2').classList.remove('hidden');$('back').classList.remove('hidden');$('next').textContent='ยืนยันส่งขอเบิก';window.scrollTo(0,0)}
+ else submit()};
+$('back').onclick=function(){$('s2').classList.add('hidden');$('s1').classList.remove('hidden');$('back').classList.add('hidden');$('next').textContent='ตรวจสอบ';$('res').innerHTML=''};
+function submit(){var p=payload();$('next').disabled=true;
+ if(!CONFIG.API_URL){var k='test_requests';var a=[];try{a=JSON.parse(localStorage.getItem(k)||'[]')}catch(e){}a.push(p);try{localStorage.setItem(k,JSON.stringify(a))}catch(e){}
+  $('res').innerHTML='<div class="banner">โหมดทดสอบ: ยังไม่ได้ส่งเข้าระบบจริง นี่คือข้อมูลที่ฟอร์มจะส่งให้เซิร์ฟเวอร์ (เซิร์ฟเวอร์จะคำนวณตัวเลขใหม่เองทั้งหมด)</div><pre>'+esc(JSON.stringify(p,null,1))+'</pre>';return}
+ post(Object.assign(p,{id_token:ID_TOKEN})).then(function(j){$('res').innerHTML=j.ok?'<div class="banner">ส่งแล้ว เลขที่ '+esc(j.doc_no)+'</div>':'<div class="err">'+esc(j.error||'ผิดพลาด')+'</div>';$('next').disabled=!!j.ok;if(j.ok){$('back').classList.add('hidden');$('next').textContent='ส่งแล้ว'}if(j.ok&&window.liff&&CONFIG.LIFF_ID)setTimeout(function(){liff.closeWindow()},2500)}).catch(function(e){$('res').innerHTML='<div class="err">ส่งไม่สำเร็จ: '+esc(e)+'</div>';$('next').disabled=false})}
+var ID_TOKEN='';
+function post(body){return fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)}).then(function(r){return r.json()})}
+function boot(){
+ var go=function(){
+  if(!CONFIG.API_URL){addLine();return}
+  post({action:'masters',id_token:ID_TOKEN}).then(function(j){if(!j.ok)throw new Error(j.error||'โหลดข้อมูลไม่สำเร็จ');M={jobs:j.jobs,payees:j.payees,whtRates:j.whtRates};$('f_req').value=j.user;addLine()}).catch(function(e){$('mode').textContent='เชื่อมต่อระบบไม่ได้: '+e.message;$('next').disabled=true})};
+ if(CONFIG.LIFF_ID){var s=document.createElement('script');s.src='https://static.line-scdn.net/liff/edge/2/sdk.js';
+  s.onload=function(){liff.init({liffId:CONFIG.LIFF_ID}).then(function(){if(!liff.isLoggedIn()){liff.login();return}ID_TOKEN=liff.getIDToken();go()}).catch(function(e){$('mode').textContent='LIFF error: '+e.message})};document.head.appendChild(s)}
+ else go()}
+boot();
+</script></body></html>
