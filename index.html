@@ -63,7 +63,7 @@ function calcLine(amount,mode,hasVat,whtRate){
 var $=function(i){return document.getElementById(i)},fmt=function(x){return Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})};
 var job=null,lines=[],seq=0;
 $('mode').textContent=CONFIG.API_URL?'เชื่อมต่อระบบจริง':'โหมดทดสอบ: ข้อมูลจริงจากชีทเซล (snapshot) · ผู้รับเงินเป็นข้อมูลสมมติ · ไม่ส่งข้อมูลไปที่ไหน';
-$('f_req').value=CONFIG.TEST_USER;$('f_date').value=new Date().toISOString().slice(0,10);
+$('f_req').value=CONFIG.TEST_USER;$('f_date').value=new Date(Date.now()+7*3600*1000).toISOString().slice(0,10);
 function opts(box,items,pick){box.innerHTML='';items.slice(0,40).forEach(function(it){var d=document.createElement('div');d.innerHTML=it.html;d.onmousedown=d.ontouchstart=function(e){e.preventDefault();pick(it.v);box.classList.add('hidden')};box.appendChild(d)});box.classList.toggle('hidden',!items.length)}
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
 $('jobq').oninput=function(){var q=this.value.toLowerCase().trim();if(!q){$('jobopts').classList.add('hidden');return}
@@ -111,7 +111,7 @@ function submit(){var p=payload();$('next').disabled=true;
   $('res').innerHTML='<div class="banner">โหมดทดสอบ: ยังไม่ได้ส่งเข้าระบบจริง นี่คือข้อมูลที่ฟอร์มจะส่งให้เซิร์ฟเวอร์ (เซิร์ฟเวอร์จะคำนวณตัวเลขใหม่เองทั้งหมด)</div><pre>'+esc(JSON.stringify(p,null,1))+'</pre>';return}
  post(Object.assign(p,{id_token:ID_TOKEN})).then(function(j){$('res').innerHTML=j.ok?'<div class="banner">ส่งแล้ว เลขที่ '+esc(j.doc_no)+'</div>':'<div class="err">'+esc(j.error||'ผิดพลาด')+'</div>';$('next').disabled=!!j.ok;if(j.ok){$('back').classList.add('hidden');$('next').textContent='ส่งแล้ว'}if(j.ok&&window.liff&&CONFIG.LIFF_ID)setTimeout(function(){liff.closeWindow()},2500)}).catch(function(e){$('res').innerHTML='<div class="err">ส่งไม่สำเร็จ: '+esc(e)+'</div>';$('next').disabled=false})}
 var ID_TOKEN='';
-function post(body){return fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)}).then(function(r){return r.json()})}
+function post(body){return fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)}).then(function(r){return r.text().then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('ตอบกลับไม่ใช่ JSON ('+r.status+'): '+t.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').slice(0,200))}})})}
 function boot(){
  var go=function(){
   if(!CONFIG.API_URL){addLine();return}
