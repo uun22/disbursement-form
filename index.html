@@ -2,30 +2,36 @@
 <html lang="th"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>ใบขอเบิกเงิน</title>
+<script>
+// เปิดลิงก์ดูเอกสาร (liff.state / ?doc=) ให้ข้ามไปหน้า doc.html ทันที ก่อนที่หน้าฟอร์มจะแสดง
+(function(){try{var q=new URLSearchParams(location.search),st=q.get('liff.state')||'',d=q.get('doc');
+ if(!d&&st.indexOf('doc')>-1){var m=/[?&]doc=([^&]+)/.exec(decodeURIComponent(st));if(m)d=decodeURIComponent(m[1])}
+ if(d){document.documentElement.style.display='none';location.replace('doc.html?doc='+encodeURIComponent(d))}}catch(e){}})();
+</script>
 <style>
-:root{--bg:#fff;--fg:#1d1d1d;--mut:#8a8a8a;--pill:#e8e8e8;--acc:#7fc4ad;--acc2:#2f8f74;--err:#c0392b;--card:#f6f6f6}
-@media(prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mut:#9a9a9a;--pill:#2b2b2b;--acc:#3d8f77;--acc2:#7fd4b8;--err:#ff7b6b;--card:#202020}}
+:root{--bg:#fff;--fg:#1d1d1d;--mut:#8a8a8a;--pill:#e8e8e8;--acc:#2e3388;--acc2:#5e99c6;--head:#2e3388;--ok:#8cc43f;--err:#c0392b;--card:#f6f6f6}
+@media(prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mut:#9a9a9a;--pill:#2b2b2b;--acc:#4650b5;--acc2:#8cc43f;--head:#9fc3e6;--ok:#8cc43f;--err:#ff7b6b;--card:#202020}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 "Sarabun","Noto Sans Thai",system-ui,sans-serif}
 .wrap{max-width:520px;margin:0 auto;padding:16px 16px 120px}
-h1{font-size:20px;margin:8px 0 2px}.sub{color:var(--mut);font-size:13px;margin-bottom:12px}
+h1{font-size:20px;margin:8px 0 2px;color:var(--head)}.sub{color:var(--mut);font-size:13px;margin-bottom:12px}
 label{display:block;font-weight:700;margin:14px 0 6px}label small{font-weight:400;color:var(--mut)}
 input,select,textarea{width:100%;border:0;background:var(--pill);color:var(--fg);border-radius:24px;padding:13px 16px;font:inherit;outline:none}
 input[readonly]{opacity:.75}textarea{border-radius:16px;min-height:60px}
 .row{display:flex;gap:10px}.row>*{flex:1}
 .radio{display:flex;gap:18px;align-items:center;margin:4px 0}.radio label{display:flex;gap:8px;align-items:center;font-weight:400;margin:0}
 .radio input{width:20px;height:20px;accent-color:var(--acc2);padding:0}
-.card{background:var(--card);border-radius:18px;padding:4px 14px 14px;margin:14px 0}
+.card{background:var(--card);border-radius:18px;padding:4px 14px 14px;margin:14px 0;border-left:5px solid #5e99c6}
 .card h3{margin:12px 0 0;font-size:15px;display:flex;justify-content:space-between;align-items:center}
 .calc{background:var(--bg);border-radius:12px;padding:10px 12px;margin-top:12px;font-size:14px}
 .calc div{display:flex;justify-content:space-between}.calc .net{font-weight:700;border-top:1px dashed var(--mut);margin-top:4px;padding-top:4px}
-.btn{border:0;border-radius:24px;padding:14px;font:inherit;font-weight:700;width:100%;background:var(--acc);color:#0b2a21;cursor:pointer}
+.btn{border:0;border-radius:24px;padding:14px;font:inherit;font-weight:700;width:100%;background:var(--acc);color:#fff;cursor:pointer}
 .btn.ghost{background:var(--pill);color:var(--fg)}.btn.del{width:auto;padding:4px 12px;background:none;color:var(--err);font-weight:400}
 .list{position:relative}.opts{position:absolute;z-index:5;left:0;right:0;background:var(--bg);border:1px solid var(--pill);border-radius:14px;max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;box-shadow:0 6px 20px #0003}
 .opts div{padding:10px 14px;border-bottom:1px solid var(--pill);font-size:14px}.opts div:hover{background:var(--pill)}.opts small{color:var(--mut);display:block}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--pill);padding:10px 16px}
 .bar .in{max-width:520px;margin:0 auto}.tot{display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px}
 .err{color:var(--err);font-size:13px;margin-top:4px}.banner{background:#fff3cd;color:#664d03;border-radius:12px;padding:8px 12px;font-size:13px;margin-bottom:10px}
-.hidden{display:none}pre{white-space:pre-wrap;background:var(--card);padding:12px;border-radius:12px;font-size:12px}
+.banner.ok{background:#e4f2cc;color:#2f4d12;border-left:5px solid #8cc43f}@media(prefers-color-scheme:dark){.banner.ok{background:#2a3a14;color:#cfe8a4}}.hidden{display:none}pre{white-space:pre-wrap;background:var(--card);padding:12px;border-radius:12px;font-size:12px}
 table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 4px;border-bottom:1px solid var(--pill);text-align:right}td:first-child,th:first-child{text-align:left}
 </style></head><body><div class="wrap">
 <div id="s1">
@@ -109,7 +115,7 @@ $('back').onclick=function(){$('s2').classList.add('hidden');$('s1').classList.r
 function submit(){var p=payload();$('next').disabled=true;$('next').textContent='กำลังส่ง...';
  if(!CONFIG.API_URL){var k='test_requests';var a=[];try{a=JSON.parse(localStorage.getItem(k)||'[]')}catch(e){}a.push(p);try{localStorage.setItem(k,JSON.stringify(a))}catch(e){}
   $('res').innerHTML='<div class="banner">โหมดทดสอบ: ยังไม่ได้ส่งเข้าระบบจริง นี่คือข้อมูลที่ฟอร์มจะส่งให้เซิร์ฟเวอร์ (เซิร์ฟเวอร์จะคำนวณตัวเลขใหม่เองทั้งหมด)</div><pre>'+esc(JSON.stringify(p,null,1))+'</pre>';return}
- post(Object.assign(p,{id_token:ID_TOKEN})).then(function(j){$('res').innerHTML=j.ok?'<div class="banner">ส่งแล้ว เลขที่ '+esc(j.doc_no)+'</div>':'<div class="err">'+esc(j.error||'ผิดพลาด')+'</div>';$('next').disabled=!!j.ok;if(!j.ok)$('next').textContent='ยืนยันส่งขอเบิก';if(j.ok){$('back').classList.add('hidden');$('next').textContent='ส่งแล้ว'}if(j.ok&&window.liff&&CONFIG.LIFF_ID)setTimeout(function(){liff.closeWindow()},2500)}).catch(function(e){$('res').innerHTML='<div class="err">ส่งไม่สำเร็จ: '+esc(e)+'</div>';$('next').disabled=false;$('next').textContent='ยืนยันส่งขอเบิก'})}
+ post(Object.assign(p,{id_token:ID_TOKEN})).then(function(j){$('res').innerHTML=j.ok?'<div class="banner ok">ส่งแล้ว เลขที่ '+esc(j.doc_no)+'</div>':'<div class="err">'+esc(j.error||'ผิดพลาด')+'</div>';$('next').disabled=!!j.ok;if(!j.ok)$('next').textContent='ยืนยันส่งขอเบิก';if(j.ok){$('back').classList.add('hidden');$('next').textContent='ส่งแล้ว'}if(j.ok&&window.liff&&CONFIG.LIFF_ID)setTimeout(function(){liff.closeWindow()},2500)}).catch(function(e){$('res').innerHTML='<div class="err">ส่งไม่สำเร็จ: '+esc(e)+'</div>';$('next').disabled=false;$('next').textContent='ยืนยันส่งขอเบิก'})}
 var ID_TOKEN='';
 function post(body){return fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)}).then(function(r){return r.json()})}
 function boot(){
