@@ -161,7 +161,10 @@ function demo(){   // ข้อมูลสมมติ ใช้ดูหน้
   if(new URLSearchParams(location.search).get('demo')==='1'){demo();return}
   var s=document.createElement('script');s.src='https://static.line-scdn.net/liff/edge/2/sdk.js';
   s.onload=function(){liff.init({liffId:CONFIG.LIFF_ID}).then(function(){
-    if(!liff.isLoggedIn()){liff.login();return}
+    if(!liff.isLoggedIn()){   // กันวนล็อกอินไม่รู้จบ: ลองได้ไม่เกิน 2 ครั้งใน 2 นาที
+      var t=JSON.parse(sessionStorage.getItem('loginTry')||'[]').filter(function(x){return Date.now()-x<120000});
+      if(t.length>=2){fail('ล็อกอินไม่สำเร็จซ้ำหลายครั้ง กรุณาปิดหน้านี้แล้วเปิดใหม่จากปุ่ม ดูเอกสาร ในแชท LINE');return}
+      t.push(Date.now());sessionStorage.setItem('loginTry',JSON.stringify(t));liff.login();return}
     load(liff.getIDToken())
   }).catch(function(e){fail('LIFF error: '+e.message)})};
   s.onerror=function(){fail('โหลด LINE SDK ไม่ได้')};
