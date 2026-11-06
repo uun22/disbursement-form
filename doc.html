@@ -132,9 +132,12 @@ function ask(t,b,yes,fn){$('dlgT').textContent=t;$('dlgB').textContent=b;$('dlgY
 $('printBtn').onclick=function(){
   var inApp=window.liff&&liff.isInClient&&liff.isInClient();
   if(inApp){
-    var doc=new URLSearchParams(location.search).get('doc')||'';
-    ask('เปิดในเบราว์เซอร์เพื่อพิมพ์','แอป LINE สั่งพิมพ์โดยตรงไม่ได้ ระบบจะเปิดเอกสารนี้ในเบราว์เซอร์ภายนอก (ครั้งแรกอาจต้องล็อกอิน LINE) จากนั้นกดปุ่ม พิมพ์ / บันทึก PDF อีกครั้ง','เปิดในเบราว์เซอร์',function(){
-      liff.openWindow({url:'https://liff.line.me/'+CONFIG.LIFF_ID+(DOC_LIFF?'?doc=':'/doc.html?doc=')+encodeURIComponent(doc),external:true})})
+    var doc=getDoc()||'';
+    ask('เปิดในเบราว์เซอร์เพื่อพิมพ์','แอป LINE สั่งพิมพ์โดยตรงไม่ได้ ระบบจะเปิดเอกสารนี้ในเบราว์เซอร์ภายนอก (ไม่ต้องล็อกอินซ้ำ ลิงก์ใช้ได้ 15 นาที) จากนั้นกดปุ่ม พิมพ์ / บันทึก PDF อีกครั้ง','เปิดในเบราว์เซอร์',function(){
+      post({action:'doclink',doc_no:doc,id_token:liff.getIDToken()}).then(function(j){
+        if(!j.ok)throw new Error(j.error||'สร้างลิงก์ไม่สำเร็จ');
+        liff.openWindow({url:location.origin+location.pathname+'?doc='+encodeURIComponent(doc)+'&k='+j.token,external:true})
+      }).catch(function(e){fail('เปิดในเบราว์เซอร์ไม่ได้: '+e.message)})})
   }else{
     ask('พิมพ์เอกสาร','ตั้งค่ากระดาษเป็น A4 แนวตั้ง ขนาด 100% และปิด Headers and footers เพื่อให้ตรงกับใบเมโมจริง หรือเลือกปลายทางเป็น บันทึกเป็น PDF','พิมพ์',function(){window.print()})
   }};
@@ -144,11 +147,14 @@ function post(body){
   return fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)}).then(function(r){
     return r.text().then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('ตอบกลับไม่ใช่ JSON ('+r.status+')')}})})
 }
+function getDoc(){var q=new URLSearchParams(location.search),d=q.get('doc');
+  if(!d){var st=q.get('liff.state')||'';var m=/[?&]doc=([^&]+)/.exec(decodeURIComponent(st));if(m)d=decodeURIComponent(m[1])}
+  return d}
 function load(token){
-  var doc=new URLSearchParams(location.search).get('doc');
+  var doc=getDoc(),k=new URLSearchParams(location.search).get('k');
   if(!doc){fail('ไม่พบเลขที่เอกสาร');return}
   STAGE='ดึงข้อมูลจากระบบ';var tq=Date.now();
-  post({action:'doc',doc_no:doc,id_token:token}).then(function(j){
+  post({action:'doc',doc_no:doc,id_token:token,k:k||undefined}).then(function(j){
     if(!j.ok)throw new Error(j.error||'โหลดเอกสารไม่สำเร็จ');render(j.doc);
     $('perf').textContent='โหลดทั้งหมด '+((Date.now()-T0)/1000).toFixed(1)+' วิ (ดึงข้อมูล '+((Date.now()-tq)/1000).toFixed(1)+' วิ, ระบบ '+(j.ms||0)+' มิลลิวินาที'+(j.cached?', จากแคช':'')+')'
   }).catch(function(e){if(e.message==='ไม่มีสิทธิ์ใช้งาน')noAccess();else fail('เปิดเอกสารไม่ได้: '+e.message)})
@@ -164,7 +170,9 @@ function demo(){   // ข้อมูลสมมติ ใช้ดูหน้
      {role:'เจ้าของงาน',name:'เจ้าของ ตัวอย่าง',date:'',state:'pending'},{role:'ฝ่ายบัญชี-การเงิน',name:'บัญชี ตัวอย่าง',date:'',state:'pending'},{role:'ผู้ตรวจสอบ',name:'ผู้ตรวจ ตัวอย่าง',date:'',state:'pending'},{role:'ผู้อนุมัติจ่าย',name:'ผู้จ่าย ตัวอย่าง',date:'',state:'pending'}]})
 }
 (function boot(){
-  if(new URLSearchParams(location.search).get('demo')==='1'){demo();return}
+  var bq=new URLSearchParams(location.search);
+  if(bq.get('demo')==='1'){demo();return}
+  if(bq.get('k')){STAGE='ดึงข้อมูลจากระบบ';load(null);return}   // ลิงก์พิมพ์ชั่วคราว: ไม่ต้องใช้ LIFF/ล็อกอิน
   STAGE='โหลด LINE SDK';var s=document.createElement('script');s.src='https://static.line-scdn.net/liff/edge/2/sdk.js';
   s.onload=function(){STAGE='เชื่อมต่อ LIFF';liff.init({liffId:CONFIG.LIFF_ID}).then(function(){
     if(!liff.isLoggedIn()){   // กันวนล็อกอินไม่รู้จบ: ลองได้ไม่เกิน 2 ครั้งใน 2 นาที
