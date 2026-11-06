@@ -2,7 +2,7 @@
 <html lang="th"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MEMO อนุมัติเบิกแอดวานซ์</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://static.line-scdn.net"><link rel="preconnect" href="https://script.google.com"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 @page{size:A4 portrait;margin:12mm}
@@ -57,6 +57,7 @@ table{border-collapse:collapse;width:100%}
 <div class="bar" id="bar">
   <button id="printBtn">พิมพ์ / บันทึก PDF</button>
   <label><input type="checkbox" id="sysChk" checked> แสดงข้อความ "อนุมัติผ่านระบบ" ในช่องลงนาม</label>
+  <small id="perf"></small>
 </div>
 <div id="dlg" class="dlg hidden"><div class="box"><b id="dlgT"></b><p id="dlgB"></p><div class="acts"><button id="dlgNo" class="ghost">ยกเลิก</button><button id="dlgYes"></button></div></div></div>
 <div id="msg">กำลังโหลดเอกสาร...</div>
@@ -115,9 +116,11 @@ function render(d){
   if(d.status==='APPROVED')wm.classList.add('hidden');
   else{wm.classList.remove('hidden');wm.textContent=d.status==='REJECTED'?'ไม่อนุมัติ':d.status==='CANCELLED'?'ยกเลิก':'ยังไม่อนุมัติครบ'}
   document.title=d.doc_no+' MEMO อนุมัติเบิกแอดวานซ์';
-  $('msg').classList.add('hidden');$('sheet').classList.remove('hidden');
+  $('msg').classList.add('hidden');$('sheet').classList.remove('hidden');clearInterval(TICK);
 }
-function fail(t){$('msg').textContent=t;$('msg').classList.remove('hidden')}
+var T0=Date.now(),STAGE='เริ่มต้น',TICK=setInterval(function(){var m=$('msg');if(m.classList.contains('hidden')||m.dataset.err){return}
+  var s=Math.round((Date.now()-T0)/1000);m.textContent='กำลังโหลดเอกสาร... ('+STAGE+' '+s+' วินาที)'+(s>25?' ใช้เวลานานผิดปกติ ลองปิดแล้วเปิดใหม่จากปุ่ม ดูเอกสาร':'')},1000);
+function fail(t){$('msg').dataset.err='1';$('msg').textContent=t;$('msg').classList.remove('hidden')}
 function noAccess(){   // บัญชี LINE ที่ล็อกอินไม่ได้ลงทะเบียน/ยังไม่ active ในชีท Users
   var m=$('msg');m.classList.remove('hidden');m.innerHTML='';
   var t=document.createElement('div');t.textContent='บัญชี LINE ที่ล็อกอินอยู่ในเบราว์เซอร์นี้ยังไม่ได้เปิดใช้งานในระบบ อาจล็อกอินคนละบัญชีกับที่ใช้ในมือถือ';m.appendChild(t);
@@ -144,8 +147,10 @@ function post(body){
 function load(token){
   var doc=new URLSearchParams(location.search).get('doc');
   if(!doc){fail('ไม่พบเลขที่เอกสาร');return}
+  STAGE='ดึงข้อมูลจากระบบ';var tq=Date.now();
   post({action:'doc',doc_no:doc,id_token:token}).then(function(j){
-    if(!j.ok)throw new Error(j.error||'โหลดเอกสารไม่สำเร็จ');render(j.doc)
+    if(!j.ok)throw new Error(j.error||'โหลดเอกสารไม่สำเร็จ');render(j.doc);
+    $('perf').textContent='โหลดทั้งหมด '+((Date.now()-T0)/1000).toFixed(1)+' วิ (ดึงข้อมูล '+((Date.now()-tq)/1000).toFixed(1)+' วิ, ระบบ '+(j.ms||0)+' มิลลิวินาที'+(j.cached?', จากแคช':'')+')'
   }).catch(function(e){if(e.message==='ไม่มีสิทธิ์ใช้งาน')noAccess();else fail('เปิดเอกสารไม่ได้: '+e.message)})
 }
 function demo(){   // ข้อมูลสมมติ ใช้ดูหน้าตาเอกสารโดยไม่ต้องล็อกอิน: doc.html?demo=1
@@ -160,12 +165,12 @@ function demo(){   // ข้อมูลสมมติ ใช้ดูหน้
 }
 (function boot(){
   if(new URLSearchParams(location.search).get('demo')==='1'){demo();return}
-  var s=document.createElement('script');s.src='https://static.line-scdn.net/liff/edge/2/sdk.js';
-  s.onload=function(){liff.init({liffId:CONFIG.LIFF_ID}).then(function(){
+  STAGE='โหลด LINE SDK';var s=document.createElement('script');s.src='https://static.line-scdn.net/liff/edge/2/sdk.js';
+  s.onload=function(){STAGE='เชื่อมต่อ LIFF';liff.init({liffId:CONFIG.LIFF_ID}).then(function(){
     if(!liff.isLoggedIn()){   // กันวนล็อกอินไม่รู้จบ: ลองได้ไม่เกิน 2 ครั้งใน 2 นาที
       var t=JSON.parse(sessionStorage.getItem('loginTry')||'[]').filter(function(x){return Date.now()-x<120000});
       if(t.length>=2){fail('ล็อกอินไม่สำเร็จซ้ำหลายครั้ง กรุณาปิดหน้านี้แล้วเปิดใหม่จากปุ่ม ดูเอกสาร ในแชท LINE');return}
-      t.push(Date.now());sessionStorage.setItem('loginTry',JSON.stringify(t));liff.login();return}
+      t.push(Date.now());sessionStorage.setItem('loginTry',JSON.stringify(t));STAGE='ล็อกอิน LINE';liff.login();return}
     load(liff.getIDToken())
   }).catch(function(e){fail('LIFF error: '+e.message)})};
   s.onerror=function(){fail('โหลด LINE SDK ไม่ได้')};
