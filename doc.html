@@ -89,7 +89,8 @@ table{border-collapse:collapse;width:100%}
   <table class="sign" id="sign"><thead><tr><th>ชื่อ / สกุล / ตำแหน่ง</th><th style="width:42mm">ลายเซ็นต์รับทราบ</th><th style="width:24mm">วันที่</th></tr></thead><tbody id="signb"></tbody></table>
 </div>
 <script>
-var CONFIG={API_URL:'https://script.google.com/macros/s/AKfycbxkPNj6mHUUpoZEvRR48KZqkfFtUfsHmjkd9LQy2pK0PiP-BctTRmT4HVPC_HJTeonV/exec',LIFF_ID:'2012297955-xttcMKSR'};
+var CONFIG={API_URL:'https://script.google.com/macros/s/AKfycbxkPNj6mHUUpoZEvRR48KZqkfFtUfsHmjkd9LQy2pK0PiP-BctTRmT4HVPC_HJTeonV/exec',LIFF_ID:'2012297955-xttcMKSR'};   // เปลี่ยนเป็น LIFF ID ตัวที่ 2 (Endpoint = doc.html) ตามที่สร้างใหม่ และตั้ง DOC_LIFF_ID ใน Script Properties เป็นค่าเดียวกัน
+var DOC_LIFF=CONFIG.LIFF_ID!=='2012297955-xttcMKSR';   // true เมื่อใช้ LIFF ตัวที่ 2
 var $=function(i){return document.getElementById(i)};
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function num(x){return Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
@@ -130,7 +131,7 @@ $('printBtn').onclick=function(){
   if(inApp){
     var doc=new URLSearchParams(location.search).get('doc')||'';
     ask('เปิดในเบราว์เซอร์เพื่อพิมพ์','แอป LINE สั่งพิมพ์โดยตรงไม่ได้ ระบบจะเปิดเอกสารนี้ในเบราว์เซอร์ภายนอก (ครั้งแรกอาจต้องล็อกอิน LINE) จากนั้นกดปุ่ม พิมพ์ / บันทึก PDF อีกครั้ง','เปิดในเบราว์เซอร์',function(){
-      liff.openWindow({url:'https://liff.line.me/'+CONFIG.LIFF_ID+'/doc.html?doc='+encodeURIComponent(doc),external:true})})
+      liff.openWindow({url:'https://liff.line.me/'+CONFIG.LIFF_ID+(DOC_LIFF?'?doc=':'/doc.html?doc=')+encodeURIComponent(doc),external:true})})
   }else{
     ask('พิมพ์เอกสาร','ตั้งค่ากระดาษเป็น A4 แนวตั้ง ขนาด 100% และปิด Headers and footers เพื่อให้ตรงกับใบเมโมจริง หรือเลือกปลายทางเป็น บันทึกเป็น PDF','พิมพ์',function(){window.print()})
   }};
