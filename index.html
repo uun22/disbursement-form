@@ -4,10 +4,10 @@
 <title>ใบขอเบิกเงิน</title>
 <script>
 // เปิดลิงก์ดูเอกสาร (liff.state / ?doc=) ให้ข้ามไปหน้า doc.html ทันที ก่อนที่หน้าฟอร์มจะแสดง
-// ไม่ข้ามเมื่อ URL มีรหัสล็อกอินของ LINE (code/state) ให้ liff.init จัดการล็อกอินให้เสร็จก่อน และข้ามได้ไม่เกิน 1 ครั้งต่อ 30 วินาที กันวนซ้ำ
+// ไม่ข้ามเมื่อ URL มีรหัสล็อกอินของ LINE (code/state) ให้ liff.init จัดการล็อกอินให้เสร็จก่อน และข้ามได้ไม่เกิน 1 ครั้งต่อ 8 วินาที กันวนซ้ำ
 (function(){try{var q=new URLSearchParams(location.search),st=q.get('liff.state')||'',d=q.get('doc');
- if(q.get('code')||q.get('liffClientId'))return;
- var last=Number(sessionStorage.getItem('skipDoc')||0);if(Date.now()-last<30000)return;
+ if(q.get('code')&&q.get('state'))return;   // ขากลับจากหน้าล็อกอินของ LINE
+ var last=Number(sessionStorage.getItem('skipDoc')||0);if(Date.now()-last<8000)return;
  if(!d&&st.indexOf('doc')>-1){var m=/[?&]doc=([^&]+)/.exec(decodeURIComponent(st));if(m)d=decodeURIComponent(m[1])}
  if(d){sessionStorage.setItem('skipDoc',String(Date.now()));document.documentElement.style.display='none';location.replace('doc.html?doc='+encodeURIComponent(d))}}catch(e){}})();
 </script>
