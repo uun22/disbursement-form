@@ -112,7 +112,7 @@ function render(d){
     return '<tr><td>'+who+(who?' / ':'')+esc(a.role)+'</td><td>'+sys+'</td><td class="d">'+esc(a.date)+'</td></tr>'}).join('');
   var wm=$('wm');
   if(d.status==='APPROVED')wm.classList.add('hidden');
-  else{wm.classList.remove('hidden');wm.textContent=d.status==='REJECTED'?'ไม่อนุมัติ':'ยังไม่อนุมัติครบ'}
+  else{wm.classList.remove('hidden');wm.textContent=d.status==='REJECTED'?'ไม่อนุมัติ':d.status==='CANCELLED'?'ยกเลิก':'ยังไม่อนุมัติครบ'}
   document.title=d.doc_no+' MEMO อนุมัติเบิกแอดวานซ์';
   $('msg').classList.add('hidden');$('sheet').classList.remove('hidden');
 }
