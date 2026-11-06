@@ -20,7 +20,7 @@ input[readonly]{opacity:.75}textarea{border-radius:16px;min-height:60px}
 .calc div{display:flex;justify-content:space-between}.calc .net{font-weight:700;border-top:1px dashed var(--mut);margin-top:4px;padding-top:4px}
 .btn{border:0;border-radius:24px;padding:14px;font:inherit;font-weight:700;width:100%;background:var(--acc);color:#0b2a21;cursor:pointer}
 .btn.ghost{background:var(--pill);color:var(--fg)}.btn.del{width:auto;padding:4px 12px;background:none;color:var(--err);font-weight:400}
-.list{position:relative}.opts{position:absolute;z-index:5;left:0;right:0;background:var(--bg);border:1px solid var(--pill);border-radius:14px;max-height:240px;overflow:auto;box-shadow:0 6px 20px #0003}
+.list{position:relative}.opts{position:absolute;z-index:5;left:0;right:0;background:var(--bg);border:1px solid var(--pill);border-radius:14px;max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;box-shadow:0 6px 20px #0003}
 .opts div{padding:10px 14px;border-bottom:1px solid var(--pill);font-size:14px}.opts div:hover{background:var(--pill)}.opts small{color:var(--mut);display:block}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--pill);padding:10px 16px}
 .bar .in{max-width:520px;margin:0 auto}.tot{display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px}
@@ -63,13 +63,13 @@ function calcLine(amount,mode,hasVat,whtRate){
 var $=function(i){return document.getElementById(i)},fmt=function(x){return Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})};
 var job=null,lines=[],seq=0;
 $('mode').textContent=CONFIG.API_URL?'เชื่อมต่อระบบจริง':'โหมดทดสอบ: ข้อมูลจริงจากชีทเซล (snapshot) · ผู้รับเงินเป็นข้อมูลสมมติ · ไม่ส่งข้อมูลไปที่ไหน';
-$('f_req').value=CONFIG.TEST_USER;$('f_date').value=new Date(Date.now()+7*3600*1000).toISOString().slice(0,10);
-function opts(box,items,pick){box.innerHTML='';items.slice(0,40).forEach(function(it){var d=document.createElement('div');d.innerHTML=it.html;d.onmousedown=d.ontouchstart=function(e){e.preventDefault();pick(it.v);box.classList.add('hidden')};box.appendChild(d)});box.classList.toggle('hidden',!items.length)}
+$('f_req').value=CONFIG.TEST_USER;$('f_date').value=new Date().toISOString().slice(0,10);
+function opts(box,items,pick){box.innerHTML='';items.slice(0,40).forEach(function(it){var d=document.createElement('div');d.innerHTML=it.html;d.onmousedown=function(e){e.preventDefault()};d.onclick=function(){pick(it.v);box.classList.add('hidden')};box.appendChild(d)});box.classList.toggle('hidden',!items.length)}
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
 $('jobq').oninput=function(){var q=this.value.toLowerCase().trim();if(!q){$('jobopts').classList.add('hidden');return}
  var r=M.jobs.filter(function(j){return (j.job_no+' '+j.customer+' '+j.job_detail).toLowerCase().indexOf(q)>-1});
  opts($('jobopts'),r.map(function(j){return{v:j,html:'<b>'+esc(j.job_no)+'</b><small>'+esc(j.customer)+' · '+esc(j.job_detail).slice(0,60)+'</small>'}}),setJob)};
-$('jobq').onblur=function(){setTimeout(function(){$('jobopts').classList.add('hidden')},150)};
+document.addEventListener('pointerdown',function(e){document.querySelectorAll('.opts').forEach(function(o){if(!o.parentNode.contains(e.target))o.classList.add('hidden')})});   // แตะนอกกล่องรายการ = ปิดรายการ (ไม่ใช้ blur เพราะบนมือถือทำให้รายการปิดตอนเลื่อน)
 function setJob(j){job=j;$('jobq').value=j.job_no;$('f_cust').value=j.customer;$('f_det').value=j.job_detail;$('f_ps').value=j.period_start;$('f_pe').value=j.period_end;$('joberr').textContent=''}
 function addLine(){var id=++seq;lines.push({id:id,date:'',desc:'',mode:'ex',amount:'',vat:'N',wht:'3',payee:null,pay:''});render()}
 function render(){var box=$('lines');box.innerHTML='';lines.forEach(function(L,i){
@@ -88,7 +88,7 @@ function render(){var box=$('lines');box.innerHTML='';lines.forEach(function(L,i
  c.querySelectorAll('[data-k]').forEach(function(el){var k=el.dataset.k;
   if(k=='payq'){el.oninput=function(){var q=el.value.toLowerCase();L.payee=null;var r=M.payees.filter(function(p){return p.name.toLowerCase().indexOf(q)>-1});
     opts(el.nextSibling,r.map(function(p){return{v:p,html:esc(p.name)+'<small>'+esc(p.bank)+' · xxx'+p.last4+' · '+p.type+'</small>'}}),function(p){L.payee=p;el.value=p.name;calc()})};
-    el.onfocus=el.oninput;el.onblur=function(){setTimeout(function(){el.nextSibling.classList.add('hidden')},150)};return}
+    el.onfocus=el.oninput;return}
   el.oninput=el.onchange=function(){L[k]=el.value;if(k=='vat'||k=='mode'||k=='amount'||k=='wht')calc()}});
  var d=c.querySelector('[data-d]');if(d)d.onclick=function(){lines=lines.filter(function(x){return x.id!=L.id});render()};
 });calc()}
@@ -106,12 +106,12 @@ $('next').onclick=function(){if($('s2').classList.contains('hidden')){if(!valida
   $('s1').classList.add('hidden');$('s2').classList.remove('hidden');$('back').classList.remove('hidden');$('next').textContent='ยืนยันส่งขอเบิก';window.scrollTo(0,0)}
  else submit()};
 $('back').onclick=function(){$('s2').classList.add('hidden');$('s1').classList.remove('hidden');$('back').classList.add('hidden');$('next').textContent='ตรวจสอบ';$('res').innerHTML=''};
-function submit(){var p=payload();$('next').disabled=true;
+function submit(){var p=payload();$('next').disabled=true;$('next').textContent='กำลังส่ง...';
  if(!CONFIG.API_URL){var k='test_requests';var a=[];try{a=JSON.parse(localStorage.getItem(k)||'[]')}catch(e){}a.push(p);try{localStorage.setItem(k,JSON.stringify(a))}catch(e){}
   $('res').innerHTML='<div class="banner">โหมดทดสอบ: ยังไม่ได้ส่งเข้าระบบจริง นี่คือข้อมูลที่ฟอร์มจะส่งให้เซิร์ฟเวอร์ (เซิร์ฟเวอร์จะคำนวณตัวเลขใหม่เองทั้งหมด)</div><pre>'+esc(JSON.stringify(p,null,1))+'</pre>';return}
- post(Object.assign(p,{id_token:ID_TOKEN})).then(function(j){$('res').innerHTML=j.ok?'<div class="banner">ส่งแล้ว เลขที่ '+esc(j.doc_no)+'</div>':'<div class="err">'+esc(j.error||'ผิดพลาด')+'</div>';$('next').disabled=!!j.ok;if(j.ok){$('back').classList.add('hidden');$('next').textContent='ส่งแล้ว'}if(j.ok&&window.liff&&CONFIG.LIFF_ID)setTimeout(function(){liff.closeWindow()},2500)}).catch(function(e){$('res').innerHTML='<div class="err">ส่งไม่สำเร็จ: '+esc(e)+'</div>';$('next').disabled=false})}
+ post(Object.assign(p,{id_token:ID_TOKEN})).then(function(j){$('res').innerHTML=j.ok?'<div class="banner">ส่งแล้ว เลขที่ '+esc(j.doc_no)+'</div>':'<div class="err">'+esc(j.error||'ผิดพลาด')+'</div>';$('next').disabled=!!j.ok;if(!j.ok)$('next').textContent='ยืนยันส่งขอเบิก';if(j.ok){$('back').classList.add('hidden');$('next').textContent='ส่งแล้ว'}if(j.ok&&window.liff&&CONFIG.LIFF_ID)setTimeout(function(){liff.closeWindow()},2500)}).catch(function(e){$('res').innerHTML='<div class="err">ส่งไม่สำเร็จ: '+esc(e)+'</div>';$('next').disabled=false;$('next').textContent='ยืนยันส่งขอเบิก'})}
 var ID_TOKEN='';
-function post(body){return fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)}).then(function(r){return r.text().then(function(t){try{return JSON.parse(t)}catch(e){throw new Error('ตอบกลับไม่ใช่ JSON ('+r.status+'): '+t.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').slice(0,200))}})})}
+function post(body){return fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)}).then(function(r){return r.json()})}
 function boot(){
  var go=function(){
   if(!CONFIG.API_URL){addLine();return}
